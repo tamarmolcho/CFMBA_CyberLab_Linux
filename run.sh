@@ -70,7 +70,7 @@ chmod +x run.sh 2>/dev/null || true
 
 # 5. Determine Kali Host IP address
 KALI_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "127.0.0.1")
-PORT="${PORT:-5050}"
+PORT="${PORT:-5001}"
 
 echo "========================================================================"
 echo "🛡️  CFMBA CyberLab Operations Center is ready!"

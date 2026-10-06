@@ -843,7 +843,7 @@ if __name__ == '__main__':
             writer.writerow({'fullName': 'Shadow_Operative_01', 'reactionTime': 248.5})
             writer.writerow({'fullName': 'Ghost_Analyst_Red', 'reactionTime': 282.1})
             writer.writerow({'fullName': 'CyberSentinel_Blue', 'reactionTime': 315.0})
-    port = int(os.environ.get('PORT', 5050))
+    port = int(os.environ.get('PORT', 5001))
     debug_mode = os.environ.get("FLASK_DEBUG") == "1"
     print(f"[*] CFMBA CyberLab Operations Center launching on http://127.0.0.1:{port}")
     app.run(debug=debug_mode, host='0.0.0.0', port=port)

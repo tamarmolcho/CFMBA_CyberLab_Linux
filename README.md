@@ -14,7 +14,7 @@ To launch the complete application:
 ```
 
 The server will automatically start on:
-👉 **http://127.0.0.1:5050** (or your server's IP address on port 5050).
+👉 **http://127.0.0.1:5001** (or your server's IP address on port 5001).
 
 *(Note: If Python system dependencies are missing on Debian/Ubuntu/Kali, run once: `sudo ./setup_kali.sh`).*
 
@@ -43,7 +43,7 @@ python3 -m pytest tests/test_cyberlab.py -v
 
 ## 📊 Entity Relationship Diagram (ERD) & Documentation
 
-- **Live Interactive Viewer in App:** `http://127.0.0.1:5050/erd`
+- **Live Interactive Viewer in App:** `http://127.0.0.1:5001/erd`
 - **High-Resolution Diagram:** `docs/erd_diagram.png`
 - **Standalone HTML Viewer:** `docs/erd_viewer.html`
 - **Data Dictionary & Schema Spec:** `docs/ERD.md`
