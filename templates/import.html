@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}CFMBA / Administration - Create or register a VM{% endblock %}
+{% block breadcrumb %}CFMBA / ADMINISTRATION / PROVISIONING{% endblock %}
+
+{% block content %}
+<div class="page-header" style="border-bottom: none; margin-bottom: 24px;">
+    <div class="page-title-box">
+        <span class="section-tag">PROVISIONING</span>
+        <h1>Create or register a VM</h1>
+        <p class="page-subtitle">Provision fresh virtual machines, link existing .vbox configurations, or import appliances.</p>
+    </div>
+</div>
+
+<!-- ==========================================
+     PROVISIONING GRID (Screenshot 3 Layout)
+     ========================================== -->
+<div class="panel">
+    <div style="display: grid; grid-template-columns: 1.1fr 1fr; gap: 32px; align-items: start;">
+        
+        <!-- ==========================================
+             LEFT COLUMN: NEW MACHINE (Screenshot 3 Left)
+             ========================================== -->
+        <div>
+            <h2>New machine</h2>
+            <form id="create-vm-form" onsubmit="event.preventDefault(); submitCreateVm();">
+                <label>
+                    <strong>VM name</strong>
+                    <input type="text" id="create-vm-name" placeholder="e.g. Debian-Custom-Lab" required>
+                </label>
+
+                <label style="margin-top: 14px;">
+                    <strong>Guest OS type</strong>
+                    <select id="create-os-type">
+                        <option value="Debian_64" selected>Debian_64</option>
+                        <option value="Ubuntu_64">Ubuntu_64</option>
+                        <option value="Windows10_64">Windows10_64</option>
+                        <option value="Windows7_64">Windows7_64</option>
+                        <option value="Windows2022_64">Windows2022_64</option>
+                        <option value="Kali_64">Kali Linux (Debian 64-bit)</option>
+                        <option value="Other_64">Other_64</option>
+                    </select>
+                </label>
+
+                <label style="margin-top: 14px;">
+                    <strong>Memory (MB)</strong>
+                    <input type="number" id="create-memory" value="4096" min="512" step="512" required>
+                </label>
+
+                <label style="margin-top: 14px;">
+                    <strong>CPUs</strong>
+                    <input type="number" id="create-cpus" value="2" min="1" max="16" required>
+                </label>
+
+                <label style="margin-top: 14px;">
+                    <strong>VDI size (MB)</strong>
+                    <input type="number" id="create-vdi" value="81920" min="2048" step="1024" required>
+                </label>
+
+                <label style="margin-top: 14px;">
+                    <strong>Installer ISO</strong>
+                    <select id="create-iso">
+                        <option value="No ISO" selected>No ISO</option>
+                        <option value="/srv/iso/debian-12.iso">/srv/iso/debian-12.iso</option>
+                        <option value="/srv/iso/kali-linux-2024.iso">/srv/iso/kali-linux-2024.iso</option>
+                        <option value="/srv/iso/Win10_English_x64.iso">/srv/iso/Win10_English_x64.iso</option>
+                    </select>
+                </label>
+
+                <div style="margin-top: 24px;">
+                    <button type="submit" class="btn" id="btn-create-vm">
+                        Create VM
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ==========================================
+             RIGHT COLUMN: REGISTER EXISTING & EXT PACKS (Screenshot 3 Right)
+             ========================================== -->
+        <div>
+            <h2>Register existing machine</h2>
+            <form id="register-vm-form" onsubmit="event.preventDefault(); submitRegisterVm();">
+                <label>
+                    <strong>Absolute .vbox file path</strong>
+                    <input type="text" id="register-path" placeholder="/home/user/VirtualBox VMs/Win7/Win7.vbox" required>
+                </label>
+
+                <div style="margin-top: 14px; margin-bottom: 28px;">
+                    <button type="submit" class="btn" id="btn-register-vm">
+                        Register VM
+                    </button>
+                </div>
+            </form>
+
+            <div style="border-top: 1px solid rgba(56, 120, 180, 0.25); padding-top: 20px;">
+                <h2>Extension packs</h2>
+                <pre class="terminal">{{ extpacks }}</pre>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ==========================================
+     SUPPLEMENTARY: IMPORT OVA / OVF APPLIANCE
+     ========================================== -->
+<div class="panel" style="margin-top: 28px;">
+    <span class="section-tag">APPLIANCE DEPLOYMENT</span>
+    <h2>Import OVA / OVF Package</h2>
+    <p class="page-subtitle" style="margin-bottom: 18px;">
+        Direct implementation of <code>vboxmanage import $vmname</code> from the original CFMBA menu item [M1].
+    </p>
+
+    <div style="border: 2px dashed rgba(56, 120, 180, 0.4); border-radius: 8px; padding: 24px; text-align: center; background: rgba(10, 22, 38, 0.4); cursor: pointer;" onclick="document.getElementById('ova-file-input').click()">
+        <div style="font-size: 24px; margin-bottom: 6px;">📥</div>
+        <strong style="color: #fff;">Click to select or drop .ova / .ovf file</strong>
+        <div style="font-size: 12px; color: var(--text-dim); margin-top: 4px;">Standard VirtualBox appliances supported up to 5GB</div>
+        <input type="file" id="ova-file-input" style="display: none;" accept=".ova,.ovf" onchange="handleFileSelected(this.files)">
+    </div>
+    <div id="selected-file-name" style="margin-top: 10px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; color: #34d399; display: none;"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function submitCreateVm() {
+    const name = document.getElementById('create-vm-name').value.trim();
+    const ostype = document.getElementById('create-os-type').value;
+    const memory = document.getElementById('create-memory').value;
+    const cpus = document.getElementById('create-cpus').value;
+    const vdi = document.getElementById('create-vdi').value;
+    const iso = document.getElementById('create-iso').value;
+
+    if (!name) {
+        showToast('Please enter a VM name.', 'error');
+        return;
+    }
+
+    showToast(`Provisioning virtual machine '${name}'...`, 'info');
+    fetch('/api/vm/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            name: name,
+            ostype: ostype,
+            memory_mb: memory,
+            cpus: cpus,
+            vdi_mb: vdi,
+            iso: iso
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        showToast(data.message, data.success ? 'success' : 'error');
+        if (data.success) {
+            setTimeout(() => window.location.href = "{{ url_for('index') }}", 1200);
+        }
+    })
+    .catch(err => showToast(`Creation error: ${err}`, 'error'));
+}
+
+function submitRegisterVm() {
+    const path = document.getElementById('register-path').value.trim();
+    if (!path || !path.endsWith('.vbox')) {
+        showToast('Path must be an absolute path ending with .vbox', 'error');
+        return;
+    }
+
+    showToast(`Registering machine at '${path}'...`, 'info');
+    fetch('/api/vm/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vbox_path: path })
+    })
+    .then(res => res.json())
+    .then(data => {
+        showToast(data.message, data.success ? 'success' : 'error');
+        if (data.success) {
+            setTimeout(() => window.location.href = "{{ url_for('index') }}", 1200);
+        }
+    })
+    .catch(err => showToast(`Registration error: ${err}`, 'error'));
+}
+
+function handleFileSelected(files) {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    const el = document.getElementById('selected-file-name');
+    el.textContent = `Selected appliance: ${file.name} (${Math.round(file.size / (1024*1024))} MB) - Ready to import`;
+    el.style.display = 'block';
+
+    const vmName = file.name.replace(/\.[^/.]+$/, "");
+    showToast(`Staging '${file.name}' for VirtualBox import...`, 'info');
+
+    fetch('/api/import_ova', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, vmname: vmName })
+    })
+    .then(res => res.json())
+    .then(data => {
+        showToast(data.message, 'success');
+        setTimeout(() => window.location.href = "{{ url_for('index') }}", 1500);
+    });
+}
+</script>
+{% endblock %}

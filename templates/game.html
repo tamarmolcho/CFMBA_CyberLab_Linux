@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}CFMBA / Administration - Threat Drill Test{% endblock %}
+{% block breadcrumb %}CFMBA / DRILL / REACTION TEST{% endblock %}
+
+{% block content %}
+<!-- Page Header (Unified Design) -->
+<div class="page-header">
+    <div class="page-title-box">
+        <span class="section-tag">CFMBA / DRILL & RESPONSE</span>
+        <h1>Incident response reaction drill</h1>
+        <p class="page-subtitle">Real-time defensive reaction benchmark. Test triage response speed and record audit results into <code>results.csv</code>.</p>
+    </div>
+    <div class="page-actions">
+        <span style="font-family: var(--font-mono); font-size: 12px; color: #4ade80; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); padding: 4px 12px; border-radius: 12px;" id="operator-rank-badge">
+            ● READY FOR DRILL
+        </span>
+    </div>
+</div>
+
+<!-- 3 Stat Cards (Unified Cards) -->
+<div class="cards">
+    <div class="card">
+        <span class="lbl">TOTAL RUNS LOGGED</span>
+        <span class="num">{{ results|length }}</span>
+        <span class="sub">records in results.csv</span>
+    </div>
+
+    <div class="card">
+        <span class="lbl">TIER 1 BENCHMARK</span>
+        <span class="num" style="color: #38bdf8;">&lt; 250 ms</span>
+        <span class="sub">Defensive response threshold</span>
+    </div>
+
+    <div class="card">
+        <span class="lbl">LATEST DRILL SPEED</span>
+        <span class="num" id="last-score-val" style="color: #4ade80;">-- ms</span>
+        <span class="sub">measured reaction time</span>
+    </div>
+</div>
+
+<!-- Main Drill Section (Unified Panel Style) -->
+<div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 24px;">
+    <!-- Left Column: Interactive Arena -->
+    <div class="panel">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px;">
+            <div style="flex: 1; margin-right: 16px;">
+                <label style="margin: 0;">
+                    <strong>Operator call-sign / Student Name</strong>
+                    <input type="text" id="operator-name" value="Tamar_Molcho" placeholder="Enter student name...">
+                </label>
+            </div>
+        </div>
+
+        <!-- Interactive Cyber Target Arena -->
+        <div class="drill-arena" id="drill-arena" onclick="handleArenaClick()" style="border-radius: 10px; margin-top: 10px;">
+            <div class="drill-hud-title" id="drill-title">CLICK TO START DRILL</div>
+            <div class="drill-hud-subtitle" id="drill-subtitle">
+                When the arena turns GREEN, click as fast as possible to neutralize the intrusion!
+            </div>
+            <div style="margin-top: 20px; font-family: var(--font-mono); font-size: 12px; color: #94a3b8; opacity: 0.8;">
+                [HOTKEY: SPACEBAR OR MOUSE CLICK TO NEUTRALIZE]
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Audit History from results.csv (Unified Table Style) -->
+    <div class="table-container" style="margin-bottom: 0;">
+        <div class="table-header">
+            <div>
+                <span class="section-tag">LOGGED AUDIT</span>
+                <h2>results.csv ledger</h2>
+            </div>
+            <a href="/api/results" target="_blank" class="btn btn-outline" style="padding: 4px 10px; font-size: 12px;">
+                📄 Raw JSON
+            </a>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>OPERATOR</th>
+                    <th>REACTION TIME</th>
+                    <th>RANK</th>
+                </tr>
+            </thead>
+            <tbody id="results-tbody">
+                {% for r in results %}
+                <tr>
+                    <td>
+                        <strong style="color: #fff; font-size: 13px;">{{ r.fullName }}</strong>
+                    </td>
+                    <td style="font-family: var(--font-mono); color: #38bdf8; font-weight: 700;">
+                        {{ r.reactionTime }} ms
+                    </td>
+                    <td>
+                        {% if r.reactionTime < 240 %}
+                        <span style="font-size: 11px; color: #4ade80; background: rgba(34, 197, 94, 0.15); padding: 2px 8px; border-radius: 10px;">Apex</span>
+                        {% elif r.reactionTime < 320 %}
+                        <span style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 2px 8px; border-radius: 10px;">Tier 1</span>
+                        {% else %}
+                        <span style="font-size: 11px; color: #f59e0b; background: rgba(245, 158, 11, 0.15); padding: 2px 8px; border-radius: 10px;">Standard</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/game.js') }}"></script>
+{% endblock %}

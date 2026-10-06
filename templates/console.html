@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}CFMBA / Administration - Operations Console{% endblock %}
+{% block breadcrumb %}CFMBA / OPERATIONS / CONSOLE{% endblock %}
+
+{% block content %}
+<!-- Page Header (Unified Design) -->
+<div class="page-header">
+    <div class="page-title-box">
+        <span class="section-tag">CFMBA / OPERATIONS</span>
+        <h1>Cyber operations console & shell</h1>
+        <p class="page-subtitle">Interactive execution interface for <code>vboxmanage</code> commands, system scripts, and diagnostic routines.</p>
+    </div>
+    <div class="page-actions">
+        <button class="btn btn-outline" onclick="clearTerminal()">
+            🧹 Clear screen
+        </button>
+        <button class="btn" onclick="copyTerminalOutput()">
+            📋 Copy logs
+        </button>
+    </div>
+</div>
+
+<!-- Terminal Panel (Unified Panel Style) -->
+<div class="panel" style="padding: 0; overflow: hidden;">
+    <div style="background: rgba(10, 22, 38, 0.9); padding: 12px 18px; border-bottom: 1px solid rgba(56, 120, 180, 0.28); display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; gap: 7px; align-items: center;">
+            <span style="width: 11px; height: 11px; border-radius: 50%; background: #ff5f56; display: inline-block;"></span>
+            <span style="width: 11px; height: 11px; border-radius: 50%; background: #ffbd2e; display: inline-block;"></span>
+            <span style="width: 11px; height: 11px; border-radius: 50%; background: #27c93f; display: inline-block;"></span>
+            <span style="font-family: var(--font-mono); font-size: 12px; color: #94a3b8; margin-left: 10px;">operator@cfmba-cyberlab: ~ [ZSH / BASH]</span>
+        </div>
+        <span style="font-family: var(--font-mono); font-size: 11.5px; color: #4ade80; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); padding: 2px 8px; border-radius: 10px;">
+            ● CONNECTED
+        </span>
+    </div>
+
+    <!-- Terminal Screen Output -->
+    <div class="terminal-screen" id="term-screen" style="height: 440px; padding: 20px; background: #03060d; overflow-y: auto; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; color: #d1e2f6; white-space: pre-wrap;">
+=============================================================================
+   CFMBA CYBERLAB OPERATIONS CENTER // ADMINISTRATIVE SHELL v2.4
+   VirtualBox Management & Telemetry Engine Online
+   Type 'help' for command directory or select preset operations below.
+=============================================================================
+    </div>
+
+    <!-- Quick Commands Bar -->
+    <div style="padding: 10px 18px; background: rgba(6, 12, 22, 0.95); border-top: 1px solid rgba(56, 120, 180, 0.2); display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <span style="font-family: var(--font-mono); font-size: 11.5px; color: #38bdf8; font-weight: 700;">PRESETS:</span>
+        <button class="term-preset-btn" onclick="runPreset('vboxmanage list vms')">[M5] vboxmanage list vms</button>
+        <button class="term-preset-btn" onclick="runPreset('vboxmanage list runningvms')">[M4] vboxmanage list runningvms</button>
+        <button class="term-preset-btn" onclick="runPreset('df -h')">[M0] df -h</button>
+        <button class="term-preset-btn" onclick="runPreset('uptime')">uptime</button>
+        <button class="term-preset-btn" onclick="runPreset('whoami')">whoami</button>
+        <button class="term-preset-btn" onclick="runPreset('vboxmanage --version')">vboxmanage --version</button>
+        <button class="term-preset-btn" onclick="runPreset('./scripts/cfmba_menu.sh --help')">scripts inspect</button>
+    </div>
+
+    <!-- Input Bar -->
+    <div style="display: flex; align-items: center; background: #08111e; border-top: 1px solid rgba(56, 120, 180, 0.28); padding: 12px 18px; gap: 12px;">
+        <span style="font-family: var(--font-mono); color: #4ade80; font-weight: 700; font-size: 13px;">operator@cyberlab:~$</span>
+        <input type="text" id="term-input" placeholder="Type a command (e.g. vboxmanage list vms, df -h, uptime)..." autocomplete="off" spellcheck="false" style="flex: 1; background: transparent; border: none; outline: none; color: #fff; font-family: var(--font-mono); font-size: 13.5px;" onkeydown="handleTermKey(event)">
+        <button class="btn" style="padding: 6px 14px; font-size: 12px;" onclick="submitTerminalCmd()">
+            Enter ↵
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let cmdHistory = [];
+let historyIndex = -1;
+
+function handleTermKey(e) {
+    if (e.key === 'Enter') {
+        submitTerminalCmd();
+    } else if (e.key === 'ArrowUp') {
+        if (cmdHistory.length > 0 && historyIndex < cmdHistory.length - 1) {
+            historyIndex++;
+            document.getElementById('term-input').value = cmdHistory[cmdHistory.length - 1 - historyIndex];
+        }
+    } else if (e.key === 'ArrowDown') {
+        if (historyIndex > 0) {
+            historyIndex--;
+            document.getElementById('term-input').value = cmdHistory[cmdHistory.length - 1 - historyIndex];
+        } else if (historyIndex === 0) {
+            historyIndex = -1;
+            document.getElementById('term-input').value = '';
+        }
+    }
+}
+
+function submitTerminalCmd() {
+    const input = document.getElementById('term-input');
+    const screen = document.getElementById('term-screen');
+    const cmd = input.value.trim();
+    if (!cmd) return;
+
+    cmdHistory.push(cmd);
+    historyIndex = -1;
+
+    screen.innerHTML += `\n<span style="color: #38bdf8; font-weight: 700;">operator@cyberlab:~$ ${cmd}</span>\n`;
+    input.value = '';
+    screen.scrollTop = screen.scrollHeight;
+
+    if (cmd.toLowerCase() === 'clear') {
+        clearTerminal();
+        return;
+    }
+
+    fetch('/api/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: cmd })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.output) {
+            screen.innerHTML += `<span style="color: #cbd5e1;">${escapeHtml(data.output)}</span>\n`;
+        } else {
+            screen.innerHTML += `<span style="color: #94a3b8;">[Command executed with exit code 0]</span>\n`;
+        }
+        screen.scrollTop = screen.scrollHeight;
+    })
+    .catch(err => {
+        screen.innerHTML += `<span style="color: #f87171;">Error executing command: ${err.message}</span>\n`;
+        screen.scrollTop = screen.scrollHeight;
+    });
+}
+
+function runPreset(cmd) {
+    document.getElementById('term-input').value = cmd;
+    submitTerminalCmd();
+}
+
+function clearTerminal() {
+    document.getElementById('term-screen').innerHTML = `=============================================================================\n   CFMBA CYBERLAB OPERATIONS CENTER // ADMINISTRATIVE SHELL v2.4\n=============================================================================\n`;
+}
+
+function copyTerminalOutput() {
+    const screen = document.getElementById('term-screen');
+    navigator.clipboard.writeText(screen.innerText).then(() => {
+        showToast('Terminal logs copied to clipboard!', 'info');
+    });
+}
+
+function escapeHtml(text) {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+</script>
+{% endblock %}

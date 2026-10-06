@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CFMBA CyberLab - התחברות למערכת</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cyberlab.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .login-wrapper {
+            width: 100%;
+            max-width: 440px;
+        }
+        .login-card {
+            background: rgba(14, 28, 48, 0.85);
+            border: 1px solid rgba(56, 120, 180, 0.4);
+            border-radius: 16px;
+            padding: 36px 32px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(14, 165, 233, 0.15);
+        }
+        .login-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            justify-content: center;
+        }
+        .login-brand-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.3), rgba(14, 165, 233, 0.1));
+            border: 1px solid #38bdf8;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        }
+        .login-brand-text h2 {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #fff;
+            margin: 0;
+        }
+        .login-brand-text span {
+            color: #38bdf8;
+        }
+        .login-brand-text p {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            font-family: var(--font-mono);
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .flash-box {
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .flash-box.error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #f87171;
+        }
+        .flash-box.info, .flash-box.success {
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            color: #38bdf8;
+        }
+        .demo-credentials-box {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(56, 120, 180, 0.25);
+            text-align: center;
+        }
+        .demo-chip-btn {
+            background: rgba(56, 189, 248, 0.08);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            color: #38bdf8;
+            font-family: var(--font-mono);
+            font-size: 11.5px;
+            padding: 5px 12px;
+            border-radius: 14px;
+            cursor: pointer;
+            margin: 4px;
+            transition: all 0.2s ease;
+        }
+        .demo-chip-btn:hover {
+            background: rgba(56, 189, 248, 0.25);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-card">
+            <!-- Brand -->
+            <div class="login-brand">
+                <div class="login-brand-icon">⚡</div>
+                <div class="login-brand-text">
+                    <h2>CFMBA <span>LAB</span></h2>
+                    <p>Ops Center v2.4 • קריה אקדמית אונו</p>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 22px;">
+                <span class="section-tag">AUTHENTICATION GATEWAY</span>
+                <h1 style="font-size: 22px; font-weight: 700; color: #fff; margin: 4px 0;">כניסה למרכז השליטה</h1>
+                <p class="page-subtitle" style="font-size: 13px;">ניהול מעבדת סייבר ומכונות וירטואליות</p>
+            </div>
+
+            <!-- Flashed Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-box {{ category }}">
+                            <span>{% if category == 'error' %}⚠️{% else %}ℹ️{% endif %}</span>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Login Form -->
+            <form method="post" action="{{ url_for('login') }}" dir="rtl">
+                <label>
+                    <strong>שם משתמש</strong>
+                    <input type="text" id="login-username" name="username" placeholder="הכנס שם משתמש..." value="" required autofocus autocomplete="username">
+                </label>
+
+                <label style="margin-top: 14px;">
+                    <strong>סיסמה</strong>
+                    <input type="password" id="login-password" name="password" placeholder="הכנס סיסמה..." value="" required autocomplete="current-password">
+                </label>
+
+                <button type="submit" class="btn" style="width: 100%; justify-content: center; padding: 11px; font-size: 14px; margin-top: 20px;">
+                    כניסה למערכת ➔
+                </button>
+            </form>
+
+            <!-- Footer Affiliation -->
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(56, 120, 180, 0.25); text-align: center; font-size: 11.5px; color: #64748b;">
+                מנחה אקדמי: מר ג'ק אלטל &middot; מפתחת: תמר מלכו &middot; הקריה האקדמית אונו
+            </div>
+        </div>
+    </div>
+</body>
+</html>

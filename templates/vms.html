@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}CFMBA CyberLab - Virtual Machines Fleet Manager{% endblock %}
+{% block breadcrumb %}VM Fleet Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-box">
+        <h2><span>🖥️</span> VIRTUAL MACHINE FLEET MANAGER</h2>
+        <p>Full lifecycle orchestration: start, halt, pause, IP resolution, and hardware provisioning.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('import_page') }}" class="cyber-btn cyber-btn-primary">
+            <span>➕</span> IMPORT APPLIANCE
+        </a>
+        <button class="cyber-btn cyber-btn-outline" onclick="window.location.reload()">
+            <span>🔄</span> REFRESH FLEET
+        </button>
+    </div>
+</div>
+
+<!-- Controls & Filters Bar -->
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+    <div style="display: flex; gap: 8px;">
+        <button class="cyber-btn cyber-btn-outline cyber-btn-sm" onclick="filterVms('all', this)" style="border-color: var(--neon-cyan); color: var(--neon-cyan);">ALL VMS ({{ vms|length }})</button>
+        <button class="cyber-btn cyber-btn-outline cyber-btn-sm" onclick="filterVms('running', this)">🟢 RUNNING</button>
+        <button class="cyber-btn cyber-btn-outline cyber-btn-sm" onclick="filterVms('stopped', this)">🔴 STOPPED</button>
+        <button class="cyber-btn cyber-btn-outline cyber-btn-sm" onclick="filterVms('paused', this)">🟡 PAUSED</button>
+    </div>
+
+    <div style="display: flex; gap: 10px;">
+        <button class="cyber-btn cyber-btn-success cyber-btn-sm" onclick="batchAction('start')">
+            <span>⚡</span> BOOT ALL RUNNABLE
+        </button>
+        <button class="cyber-btn cyber-btn-danger cyber-btn-sm" onclick="batchAction('stop')">
+            <span>🛑</span> EMERGENCY HALT ALL
+        </button>
+    </div>
+</div>
+
+<!-- VM Fleet Cards -->
+<div class="vms-grid" id="vms-fleet-container">
+    {% for vm in vms %}
+    <div class="vm-card state-{{ vm.state }}" data-state="{{ vm.state }}" id="fleet-card-{{ vm.id }}">
+        <div class="vm-card-top">
+            <div class="vm-title-group">
+                <h3>{{ vm.name }}</h3>
+                <span class="vm-role-badge">ROLE: {{ vm.role }}</span>
+            </div>
+            <span class="status-badge {{ vm.state }}">{{ vm.state }}</span>
+        </div>
+
+        <div class="vm-specs-list">
+            <div class="spec-item">
+                <span class="spec-k">Target IP Address</span>
+                <span class="spec-v ip-highlight" id="ip-display-{{ vm.id }}">{{ vm.ip }}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-k">MAC Address</span>
+                <span class="spec-v">{{ vm.mac }}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-k">Platform OS</span>
+                <span class="spec-v">{{ vm.os }}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-k">vCPU & Memory</span>
+                <span class="spec-v">{{ vm.cpus }} vCPU / {{ vm.ram }} MB</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-k">Virtual Network Mode</span>
+                <span class="spec-v">{{ vm.net_mode }}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-k">VirtualBox UUID</span>
+                <span class="spec-v" style="font-size: 0.7rem; color: var(--text-muted);">{{ vm.id }}</span>
+            </div>
+        </div>
+
+        <div class="vm-card-actions">
+            {% if vm.state == 'running' %}
+            <button class="cyber-btn cyber-btn-danger cyber-btn-sm" onclick="controlVm('{{ vm.id }}', 'stop')">
+                <span>⏹️</span> STOP
+            </button>
+            <button class="cyber-btn cyber-btn-outline cyber-btn-sm" onclick="controlVm('{{ vm.id }}', 'pause')">
+                <span>⏸️</span> PAUSE
+            </button>
+            <button class="cyber-btn cyber-btn-primary cyber-btn-sm" onclick="captureScreenshot('{{ vm.id }}')">
+                <span>📸</span> SCREENSHOT
+            </button>
+            {% else %}
+            <button class="cyber-btn cyber-btn-success cyber-btn-sm" onclick="controlVm('{{ vm.id }}', 'start')">
+                <span>▶️</span> START VM
+            </button>
+            <button class="cyber-btn cyber-btn-outline cyber-btn-sm" onclick="queryVmIp('{{ vm.id }}', 'ip-display-{{ vm.id }}')">
+                <span>🔍</span> QUERY IP
+            </button>
+            {% endif %}
+
+            <button class="cyber-btn cyber-btn-outline cyber-btn-sm" style="margin-left: auto;" title="Copy VM UUID" onclick="copyText('{{ vm.id }}', this)">
+                <span>📋</span> UUID
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterVms(state, btnEl) {
+    cyberSfx.click();
+    document.querySelectorAll('.vms-grid .vm-card').forEach(card => {
+        if (state === 'all' || card.dataset.state === state) {
+            card.style.display = 'flex';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function batchAction(action) {
+    if (confirm(`Are you sure you want to ${action.toUpperCase()} all virtual machines in the fleet?`)) {
+        document.querySelectorAll('.vms-grid .vm-card').forEach(card => {
+            const vmid = card.id.replace('fleet-card-', '');
+            const state = card.dataset.state;
+            if (action === 'start' && state !== 'running') {
+                controlVm(vmid, 'start');
+            } else if (action === 'stop' && state === 'running') {
+                controlVm(vmid, 'stop');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

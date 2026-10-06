@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}תרשים קשרי ישויות (ERD) | CFMBA CyberLab{% endblock %}
+
+{% block content %}
+<div class="hud-panel animate-fade-in">
+  <div class="panel-header">
+    <div class="header-title">
+      <span class="hud-icon">📊</span>
+      <h2>תרשים קשרי ישויות (ERD Diagram) ומבנה הנתונים</h2>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" onclick="downloadErdImage()">
+        📸 שמור כתמונה (PNG)
+      </button>
+      <button class="btn btn-outline" onclick="window.print()">
+        🖨️ הדפסה
+      </button>
+    </div>
+  </div>
+
+  <div class="panel-body">
+    <div style="background: rgba(13, 21, 36, 0.85); border: 1px solid var(--border-color); border-radius: 8px; padding: 25px; text-align: center; overflow-x: auto; margin-bottom: 25px;">
+      <div id="mermaid-erd-wrapper" style="display: inline-block; min-width: 950px; direction: ltr !important; text-align: left !important;">
+        <pre class="mermaid" id="app-mermaid" style="direction: ltr !important; text-align: left !important;">
+erDiagram
+    ROLE ||--o{ USER : "assigns (1:N)"
+    ROLE ||--|{ ROLE_PERMISSION : "contains (1:N)"
+    PERMISSION ||--|{ ROLE_PERMISSION : "granted_to (1:N)"
+    
+    HOST ||--o{ VIRTUAL_SYSTEM : "hosts (1:N)"
+    
+    USER ||--o{ ENVIRONMENT : "creates (1:N)"
+    USER ||--o{ ENVIRONMENT_RUN : "launches (1:N)"
+    USER ||--o{ ACTION_LOG : "executes (1:N)"
+    
+    ENVIRONMENT ||--|{ ENVIRONMENT_SYSTEM : "includes (1:N)"
+    VIRTUAL_SYSTEM ||--o{ ENVIRONMENT_SYSTEM : "assigned_to (1:N)"
+    
+    ENVIRONMENT ||--o{ ENVIRONMENT_RUN : "instantiates (1:N)"
+
+    ROLE {
+        int role_id PK
+        string name
+        string description
+    }
+
+    USER {
+        int user_id PK
+        string username
+        string email
+        string full_name
+        string password_hash
+        int role_id FK
+        string locale
+        boolean active
+        datetime created_at
+    }
+
+    PERMISSION {
+        int permission_id PK
+        string code
+        string description
+    }
+
+    ROLE_PERMISSION {
+        int role_id PK,FK
+        int permission_id PK,FK
+    }
+
+    HOST {
+        int host_id PK
+        string name
+        string address
+        string mode
+        datetime created_at
+    }
+
+    VIRTUAL_SYSTEM {
+        int system_id PK
+        int host_id FK
+        string uuid
+        string name
+        string os_type
+        string state
+        string ip_address
+        int memory_mb
+        int cpus
+        int vdi_size_mb
+    }
+
+    ENVIRONMENT {
+        int environment_id PK
+        int owner_user_id FK
+        string name
+        text description
+        string course_name
+        datetime created_at
+    }
+
+    ENVIRONMENT_SYSTEM {
+        int env_sys_id PK
+        int environment_id FK
+        int system_id FK
+        int boot_order
+        string role_label
+    }
+
+    ENVIRONMENT_RUN {
+        int run_id PK
+        int environment_id FK
+        int started_by_user_id FK
+        datetime started_at
+        datetime stopped_at
+        string network_mode
+        string status
+    }
+
+    ACTION_LOG {
+        int log_id PK
+        int user_id FK
+        string action_type
+        string target
+        text command
+        int exit_code
+        datetime timestamp
+    }
+
+    THREAT_DRILL_RESULT {
+        int drill_id PK
+        string full_name
+        float reaction_time_ms
+        string tier_rating
+        datetime timestamp
+    }
+        </pre>
+      </div>
+    </div>
+
+    <div class="card" style="padding: 20px; background: rgba(18, 26, 40, 0.7); border: 1px solid var(--border-color); border-radius: 8px;">
+      <h3 style="color: var(--accent-color); margin-bottom: 12px;">📁 מסמך ERD המלא ומילון הנתונים</h3>
+      <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 15px;">
+        הקובץ המלא מתועד תחת <code style="color: var(--primary-color);">docs/ERD.md</code>. ניתן גם לפתוח את הקובץ העצמאי <code style="color: var(--primary-color);">docs/erd_viewer.html</code> ישירות בכל דפדפן.
+      </p>
+      <a href="{{ url_for('index') }}" class="btn btn-primary">חזרה ללוח הבקרה</a>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      darkMode: true,
+      background: '#0d1524',
+      primaryColor: '#1e293b',
+      primaryTextColor: '#f1f5f9',
+      primaryBorderColor: '#38bdf8',
+      lineColor: '#00ff9d',
+      secondaryColor: '#111927',
+      tertiaryColor: '#162032'
+    }
+  });
+
+  function downloadErdImage() {
+    const svg = document.querySelector('#mermaid-erd-wrapper svg');
+    if (!svg) {
+      alert('התרשים נטען, אנא נסה שוב בעוד רגע.');
+      return;
+    }
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    const svgSize = svg.getBoundingClientRect();
+    const scale = 2;
+    canvas.width = (svgSize.width || 1200) * scale;
+    canvas.height = (svgSize.height || 800) * scale;
+
+    const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+    const URL = window.URL || window.webkitURL || window;
+    const blobURL = URL.createObjectURL(svgBlob);
+
+    img.onload = function() {
+      ctx.fillStyle = '#0a0e17';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const pngURL = canvas.toDataURL('image/png');
+      const downloadLink = document.createElement('a');
+      downloadLink.download = 'CFMBA_CyberLab_ERD_Diagram.png';
+      downloadLink.href = pngURL;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      URL.revokeObjectURL(blobURL);
+    };
+    img.src = blobURL;
+  }
+</script>
+{% endblock %}

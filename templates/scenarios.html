@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}CFMBA / Administration - Duplicate & Scenarios{% endblock %}
+{% block breadcrumb %}CFMBA / ADMINISTRATION / SCENARIOS{% endblock %}
+
+{% block content %}
+<div class="page-header" style="border-bottom: none; margin-bottom: 24px;">
+    <div class="page-title-box">
+        <span class="section-tag">CFMBA / ADMINISTRATION</span>
+        <h1>Lab orchestration & provisioning</h1>
+        <p class="page-subtitle">Clone individual virtual machines for students and batch-start shared network scenarios.</p>
+    </div>
+</div>
+
+<!-- ==========================================
+     SECTION 1: DUPLICATE A VM (Screenshot 2 Top)
+     ========================================== -->
+<div class="panel" style="margin-bottom: 28px;">
+    <span class="section-tag">NEW USER MACHINE</span>
+    <h2>Duplicate a VM</h2>
+    <p class="page-subtitle" style="margin-bottom: 20px;">
+        Create a full, independent copy of a powered-off VM and register it under a new name. You can start the copy immediately.
+    </p>
+
+    <form id="duplicate-form" onsubmit="event.preventDefault(); submitDuplicate();">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start;">
+            <!-- Left Column -->
+            <div>
+                <label>
+                    <strong>Source VM</strong>
+                    <select id="clone-source" required>
+                        <option value="">Choose a stopped VM</option>
+                        {% for vm in vms %}
+                            {% if vm.state != 'running' %}
+                            <option value="{{ vm.id }}">{{ vm.name }} ({{ vm.os }})</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <label style="margin-top: 14px;">
+                    <strong>Copy state</strong>
+                    <select id="clone-mode">
+                        <option value="current" selected>Current state only</option>
+                        <option value="all">All snapshots and states</option>
+                    </select>
+                </label>
+
+                <div style="margin-top: 22px;">
+                    <button type="submit" class="btn" id="btn-duplicate-vm">
+                        Duplicate VM
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div>
+                <label>
+                    <strong>New VM name</strong>
+                    <input type="text" id="clone-new-name" placeholder="e.g. Lab - User 2" required>
+                </label>
+
+                <label class="checkbox-label" style="margin-top: 20px;">
+                    <input type="checkbox" id="clone-start-after" checked>
+                    <span>Start the new VM after cloning</span>
+                </label>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- ==========================================
+     SECTION 2: SCENARIOS (Screenshot 2 Bottom)
+     ========================================== -->
+<div class="panel">
+    <span class="section-tag">BATCH START</span>
+    <h2>Scenarios</h2>
+    <p class="page-subtitle" style="margin-bottom: 20px;">
+        Select stopped VMs and one shared network. NAT Network lets the VMs communicate with each other; bridged puts them on the selected host network.
+    </p>
+
+    <form id="scenario-form" onsubmit="event.preventDefault(); submitScenario();">
+        <div style="display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px; align-items: start;">
+            <!-- Left Column -->
+            <div>
+                <label>
+                    <strong>Scenario name</strong>
+                    <input type="text" id="scenario-name" placeholder="e.g. Lab environment" value="Lab environment" required>
+                </label>
+
+                <label style="margin-top: 14px;">
+                    <strong>Network mode</strong>
+                    <select id="scenario-net-mode">
+                        <option value="NAT Network" selected>NAT Network (Inter-VM communication enabled)</option>
+                        <option value="Bridged">Bridged (Places VMs directly on host network)</option>
+                        <option value="Host-Only">Host-Only (Isolated private subnet)</option>
+                        <option value="Internal">Internal (Strict sandbox isolation)</option>
+                    </select>
+                </label>
+
+                <div style="margin-top: 24px;">
+                    <button type="submit" class="btn" id="btn-launch-scenario">
+                        Launch Scenario
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column: Machines Checkbox Box -->
+            <div>
+                <label><strong>Machines</strong></label>
+                <div class="machines-box">
+                    {% for vm in vms %}
+                    <label class="machine-choice">
+                        <input type="checkbox" name="scenario_vms" value="{{ vm.id }}" {% if vm.name in ['kali-linux-2026.2-virtualbox-amd64', 'csal231', 'CFMBA_FinalChallenge', 'CFMBA_FinalChallenge 1'] %}checked{% endif %}>
+                        <span>
+                            <strong>{{ vm.name }}</strong>
+                            <span class="vm-stat">({% if vm.state == 'running' %}running{% else %}stopped{% endif %})</span>
+                        </span>
+                    </label>
+                    {% endfor %}
+                </div>
+                <div style="font-size: 11.5px; color: var(--text-dim); margin-top: 8px;">
+                    Check all machines participating in this lab drill.
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function submitDuplicate() {
+    const sourceId = document.getElementById('clone-source').value;
+    const newName = document.getElementById('clone-new-name').value.trim();
+    const copyState = document.getElementById('clone-mode').value;
+    const startAfter = document.getElementById('clone-start-after').checked;
+
+    if (!sourceId || !newName) {
+        showToast('Please select a source VM and enter a new name.', 'error');
+        return;
+    }
+
+    showToast(`Cloning '${newName}'... Please wait.`, 'info');
+    fetch('/api/vm/duplicate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            source_id: sourceId,
+            new_name: newName,
+            copy_state: copyState,
+            start_after: startAfter
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            setTimeout(() => window.location.href = "{{ url_for('index') }}", 1200);
+        } else {
+            showToast(`Error: ${data.message}`, 'error');
+        }
+    })
+    .catch(err => showToast(`Request error: ${err}`, 'error'));
+}
+
+function submitScenario() {
+    const name = document.getElementById('scenario-name').value.trim();
+    const netMode = document.getElementById('scenario-net-mode').value;
+    const checked = Array.from(document.querySelectorAll('input[name="scenario_vms"]:checked')).map(cb => cb.value);
+
+    if (checked.length === 0) {
+        showToast('Please select at least one machine for the scenario.', 'error');
+        return;
+    }
+
+    showToast(`Launching scenario '${name}' with ${checked.length} machines on ${netMode}...`, 'info');
+    fetch('/api/scenario/launch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            scenario_name: name,
+            network_mode: netMode,
+            vms: checked
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        showToast(data.message, 'success');
+        setTimeout(() => window.location.href = "{{ url_for('index') }}", 1500);
+    })
+    .catch(err => showToast(`Launch failed: ${err}`, 'error'));
+}
+</script>
+{% endblock %}

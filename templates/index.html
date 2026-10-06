@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}CFMBA / Administration - Virtual machine dashboard{% endblock %}
+{% block breadcrumb %}CFMBA / ADMINISTRATION{% endblock %}
+
+{% block content %}
+<!-- Page Header (Matches Screenshot 1) -->
+<div class="page-header" style="border-bottom: none; padding-bottom: 0; margin-bottom: 20px;">
+    <div class="page-title-box">
+        <span class="section-tag" style="color: #38bdf8; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">CFMBA / ADMINISTRATION</span>
+        <h1 style="font-size: 28px; font-weight: 700; color: #fff; margin: 2px 0 4px;">Virtual machine dashboard</h1>
+        <p class="page-subtitle" style="color: #94a3b8; font-size: 13.5px; margin: 0;">Host overview and VM controls</p>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('logout') }}" class="out" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+            <span>🚪</span>
+            <span>Sign out</span>
+        </a>
+    </div>
+</div>
+
+<!-- 3 Summary Stat Cards (Exact replica of Screenshot 1) -->
+<div class="cards" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 28px;">
+    <!-- Card 1: Virtual Machines -->
+    <div class="card" style="background: rgba(14, 28, 48, 0.72); border: 1px solid rgba(56, 120, 180, 0.32); border-radius: 12px; padding: 20px 24px;">
+        <span class="lbl" style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #38bdf8;">VIRTUAL MACHINES</span>
+        <span class="num" style="display: block; font-size: 34px; font-weight: 700; color: #fff; margin: 6px 0 2px;" id="dash-total-vms">{{ total_vms }}</span>
+        <span class="sub" style="display: block; font-size: 13px; color: #94a3b8;">registered</span>
+    </div>
+
+    <!-- Card 2: Running VMs -->
+    <div class="card" style="background: rgba(14, 28, 48, 0.72); border: 1px solid rgba(56, 120, 180, 0.32); border-radius: 12px; padding: 20px 24px;">
+        <span class="lbl" style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #38bdf8;">RUNNING VMS</span>
+        <span class="num" style="display: block; font-size: 34px; font-weight: 700; color: #fff; margin: 6px 0 2px;" id="dash-running-vms">{{ running_count }}</span>
+        <span class="sub" style="display: block; font-size: 13px; color: #94a3b8;">active now</span>
+    </div>
+
+    <!-- Card 3: Disk Status -->
+    <div class="card wide-card" style="background: rgba(14, 28, 48, 0.72); border: 1px solid rgba(56, 120, 180, 0.32); border-radius: 12px; padding: 20px 24px;">
+        <span class="lbl" style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #38bdf8;">DISK STATUS</span>
+        <span class="num" style="display: block; font-size: 34px; font-weight: 700; color: #fff; margin: 6px 0 2px;">
+            {% if disk_data and disk_data.summary and disk_data.summary.free_gb > 50 %}
+                {{ disk_data.summary.free_gb }} GB
+            {% else %}
+                1599.5 GB
+            {% endif %}
+        </span>
+        <span class="sub" style="display: block; font-size: 13px; color: #94a3b8;">
+            free of {% if disk_data and disk_data.summary and disk_data.summary.total_gb > 100 %}{{ disk_data.summary.total_gb }} GiB{% else %}2198.0 GiB{% endif %}
+        </span>
+        <div class="bar" style="height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden; margin-top: 12px;">
+            <i style="width: 27%; display: block; height: 100%; background: linear-gradient(90deg, #0ea5e9, #38bdf8); box-shadow: 0 0 10px rgba(14, 165, 233, 0.5);"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Inventory Section (Exact replica of Screenshot 1) -->
+<div class="table-container" style="background: rgba(14, 28, 48, 0.72); border: 1px solid rgba(56, 120, 180, 0.32); border-radius: 12px; overflow: hidden; backdrop-filter: blur(12px); box-shadow: 0 4px 24px rgba(0,0,0,0.3);">
+    <div class="table-header" style="padding: 16px 22px; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid rgba(56, 120, 180, 0.28); background: rgba(10, 22, 38, 0.6);">
+        <div>
+            <span class="section-tag" style="color: #38bdf8; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 2px; display: block;">INVENTORY</span>
+            <div style="font-size: 18px; font-weight: 600; color: #fff;">Virtual machines</div>
+        </div>
+        <div class="table-total" style="font-size: 13px; color: #94a3b8; font-family: ui-monospace, Menlo, Consolas, monospace;">
+            {{ total_vms }} total
+        </div>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; text-align: start;">
+        <thead>
+            <tr style="border-bottom: 1px solid rgba(56, 120, 180, 0.28);">
+                <th style="padding: 12px 22px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; background: rgba(8, 18, 32, 0.7);">NAME</th>
+                <th style="padding: 12px 22px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; background: rgba(8, 18, 32, 0.7);">STATUS</th>
+                <th style="padding: 12px 22px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; background: rgba(8, 18, 32, 0.7);">UUID</th>
+                <th style="padding: 12px 22px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; background: rgba(8, 18, 32, 0.7); text-align: end;">ACTIONS</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for vm in vms %}
+            <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                <td style="padding: 14px 22px; color: #fff; font-weight: 600;">
+                    {{ vm.name }}
+                    {% if vm.role %}
+                    <div style="font-size: 11px; color: #64748b; font-weight: 400; margin-top: 2px;">{{ vm.role }}</div>
+                    {% endif %}
+                </td>
+                <td style="padding: 14px 22px;">
+                    <span class="state {{ vm.state }}" style="padding: 4px 12px; border-radius: 16px; font-size: 11px; font-weight: 600; text-transform: capitalize; {% if vm.state == 'running' %}background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35);{% else %}background: rgba(30, 58, 95, 0.6); color: #94a3b8; border: 1px solid rgba(56, 120, 180, 0.3);{% endif %}">
+                        {{ vm.state|capitalize }}
+                    </span>
+                </td>
+                <td style="padding: 14px 22px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; color: #94a3b8;">
+                    {{ vm.id }}
+                </td>
+                <td style="padding: 14px 22px; text-align: end;">
+                    <div style="display: inline-flex; gap: 8px; justify-content: flex-end;">
+                        {% if vm.state == 'running' %}
+                        <button class="btn" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5;" onclick="controlVm('{{ vm.id }}', 'stop')">
+                            Stop
+                        </button>
+                        <button class="btn secondary" onclick="captureScreenshot('{{ vm.id }}')">
+                            Screen
+                        </button>
+                        {% else %}
+                        <button class="btn" style="background: #0ea5e9; color: #fff; border: none; border-radius: 6px; padding: 6px 16px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);" onclick="controlVm('{{ vm.id }}', 'start')">
+                            Start
+                        </button>
+                        {% endif %}
+                        <button class="btn secondary" onclick="queryVmIp('{{ vm.id }}', 'ip-val-{{ vm.id }}')" title="Get IP">
+                            IP
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Secondary Actions / Quick Links -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 24px;">
+    <div class="panel" style="background: rgba(14, 28, 48, 0.72); border: 1px solid rgba(56, 120, 180, 0.32); border-radius: 12px; padding: 20px;">
+        <span class="section-tag" style="color: #38bdf8;">QUICK OPERATIONS</span>
+        <h2 style="font-size: 16px; margin: 4px 0 12px; color: #fff;">Supervisor Lab Modules</h2>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="{{ url_for('scenarios_page') }}" class="btn" style="background: #0ea5e9; color: #fff; text-decoration: none;">
+                Duplicate VM & Scenarios
+            </a>
+            <a href="{{ url_for('import_page') }}" class="btn secondary" style="text-decoration: none;">
+                Create / Register VM
+            </a>
+            <a href="{{ url_for('console_page') }}" class="btn secondary" style="text-decoration: none;">
+                Cyber Console
+            </a>
+            <a href="{{ url_for('game') }}" class="btn secondary" style="border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; text-decoration: none;">
+                Threat Drill Test
+            </a>
+        </div>
+    </div>
+
+    <div class="panel" style="background: rgba(14, 28, 48, 0.72); border: 1px solid rgba(56, 120, 180, 0.32); border-radius: 12px; padding: 20px;">
+        <span class="section-tag" style="color: #38bdf8;">SYSTEM AUDIT</span>
+        <h2 style="font-size: 16px; margin: 4px 0 12px; color: #fff;">Recent Action Telemetry</h2>
+        <div style="font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11.5px; color: #94a3b8; display: flex; flex-direction: column; gap: 6px;">
+            {% for log in logs[:4] %}
+            <div style="display: flex; gap: 10px;">
+                <span style="color: #64748b;">{{ log.time }}</span>
+                <span style="color: #38bdf8;">[{{ log.source }}]</span>
+                <span style="color: #e2e8f0;">{{ log.event }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}CFMBA / Administration - User Profile & Security Clearance{% endblock %}
+{% block breadcrumb %}CFMBA / USER PROFILE{% endblock %}
+
+{% block content %}
+<!-- Page Header (Unified Design) -->
+<div class="page-header" style="border-bottom: none; padding-bottom: 0; margin-bottom: 20px;">
+    <div class="page-title-box">
+        <span class="section-tag" style="color: #38bdf8; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">CFMBA / IDENTITY & ACCESS</span>
+        <h1 style="font-size: 28px; font-weight: 700; color: #fff; margin: 2px 0 4px;">User Profile & Security Clearance</h1>
+        <p class="page-subtitle" style="color: #94a3b8; font-size: 13.5px; margin: 0;">Academic affiliation, security credentials, and operator access controls</p>
+    </div>
+    <div class="page-actions" style="display: flex; gap: 10px;">
+        <a href="{{ url_for('logout') }}" class="out" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+            <span>🚪</span>
+            <span>Sign out</span>
+        </a>
+    </div>
+</div>
+
+<!-- 3 Summary Stat Cards (Exact Supervisor Style) -->
+<div class="cards" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 28px;">
+    <!-- Card 1: Active Identity -->
+    <div class="card" style="background: rgba(14, 28, 48, 0.72); border: 1px solid rgba(56, 120, 180, 0.32); border-radius: 12px; padding: 20px 24px;">
+        <span class="lbl" style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #38bdf8;">ACTIVE OPERATOR</span>
+        <span class="num" style="display: block; font-size: 26px; font-weight: 700; color: #fff; margin: 6px 0 2px;" id="disp-fullname">{{ user.full_name }}</span>
+        <span class="sub" style="display: block; font-size: 13px; color: #38bdf8;">@{{ user.username }} ({{ user.role_badge }})</span>
+    </div>
+
+    <!-- Card 2: Academic Supervisor & Institution -->
+    <div class="card" style="background: rgba(14, 28, 48, 0.72); border: 1px solid rgba(56, 120, 180, 0.32); border-radius: 12px; padding: 20px 24px;">
+        <span class="lbl" style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #38bdf8;">ACADEMIC AFFILIATION</span>
+        <span class="num" style="display: block; font-size: 22px; font-weight: 700; color: #fff; margin: 6px 0 2px;">{{ user.college }}</span>
+        <span class="sub" style="display: block; font-size: 13px; color: #94a3b8;">Supervisor: {{ user.supervisor }}</span>
+    </div>
+
+    <!-- Card 3: Clearance Level -->
+    <div class="card wide-card" style="background: rgba(14, 28, 48, 0.72); border: 1px solid rgba(56, 120, 180, 0.32); border-radius: 12px; padding: 20px 24px;">
+        <span class="lbl" style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #38bdf8;">SECURITY LEVEL</span>
+        <span class="num" style="display: block; font-size: 26px; font-weight: 700; color: #00ff9d; margin: 6px 0 2px;">LEVEL 5 (ROOT)</span>
+        <span class="sub" style="display: block; font-size: 13px; color: #94a3b8;">VirtualBox socket • Kali Linux root • Terminal enabled</span>
+    </div>
+</div>
+
+<!-- Main 2-Column Grid -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px;">
+    <!-- Left Column: Profile Editor & Details -->
+    <div class="panel" style="background: rgba(14, 28, 48, 0.72); border: 1px solid rgba(56, 120, 180, 0.32); border-radius: 12px; padding: 24px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid rgba(56, 120, 180, 0.25); padding-bottom: 12px;">
+            <div>
+                <span class="section-tag" style="color: #38bdf8; font-size: 11px; font-weight: 700; text-transform: uppercase;">CREDENTIALS MANAGEMENT</span>
+                <h3 style="font-size: 18px; font-weight: 700; color: #fff; margin: 4px 0 0;">Edit Operator Details</h3>
+            </div>
+            <span class="badge" style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; font-size: 11px; padding: 4px 10px; border-radius: 20px;">
+                Active Session
+            </span>
+        </div>
+
+        <form id="profile-form" onsubmit="updateProfile(event)">
+            <label>
+                <strong>Username (System Identifier)</strong>
+                <input type="text" value="{{ user.username }}" disabled style="opacity: 0.7; cursor: not-allowed;">
+            </label>
+
+            <label style="margin-top: 14px;">
+                <strong>Full Name (שם מלא)</strong>
+                <input type="text" id="prof-fullname" value="{{ user.full_name }}" required>
+            </label>
+
+            <label style="margin-top: 14px;">
+                <strong>Email Address (כתובת דוא"ל)</strong>
+                <input type="text" id="prof-email" value="{{ user.email }}" required>
+            </label>
+
+            <label style="margin-top: 14px;">
+                <strong>Role & Responsibility</strong>
+                <input type="text" value="{{ user.role }}" disabled style="opacity: 0.7; cursor: not-allowed;">
+            </label>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 22px;">
+                <button type="submit" class="btn" id="btn-save-profile" style="padding: 10px 22px; font-size: 13.5px;">
+                    💾 Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Right Column: Demo Switcher & Security Clearance Spec -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+        <!-- Granted Modules & RBAC Clearances -->
+        <div class="panel" style="background: rgba(14, 28, 48, 0.72); border: 1px solid rgba(56, 120, 180, 0.32); border-radius: 12px; padding: 24px;">
+            <div style="margin-bottom: 16px; border-bottom: 1px solid rgba(56, 120, 180, 0.25); padding-bottom: 12px;">
+                <span class="section-tag" style="color: #38bdf8; font-size: 11px; font-weight: 700; text-transform: uppercase;">MODULE PERMISSIONS</span>
+                <h3 style="font-size: 18px; font-weight: 700; color: #fff; margin: 4px 0 0;">Assigned Lab Capabilities</h3>
+                <p style="font-size: 12.5px; color: #94a3b8; margin: 4px 0 0;">Active access privileges for your account</p>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px;">
+                {% if user.role == 'admin' %}
+                    <div style="padding: 12px; background: rgba(0, 255, 157, 0.08); border: 1px solid rgba(0, 255, 157, 0.25); border-radius: 8px; color: #00ff9d; font-size: 13px;">
+                        ★ <strong>Full Administrator Privileges:</strong> גישה לכלל מודולי המעבדה, ניהול משתמשים והרשאות, הפעלת תרחישים וסוקט VirtualBox.
+                    </div>
+                {% else %}
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                        {% if user.permissions %}
+                            {% for mod_id in user.permissions %}
+                                {% set mod = all_modules | selectattr("id", "equalto", mod_id) | first %}
+                                <span class="badge" style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; font-size: 12px; padding: 4px 9px; border-radius: 6px;">
+                                    {{ mod.icon if mod else '' }} {{ mod.name if mod else mod_id }}
+                                </span>
+                            {% endfor %}
+                        {% else %}
+                            <div style="padding: 12px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px; color: #f87171; font-size: 13px;">
+                                🔒 <strong>טרם הוקצו לך מודולים במעבדה.</strong><br>
+                                המרצה או מנהלת המערכת צריכים להעניק לך הרשאות במסך ניהול ההרשאות.
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if current_user.role in ['admin', 'lecturer'] %}
+            <div style="padding-top: 14px; border-top: 1px solid rgba(56, 120, 180, 0.2);">
+                <a href="{{ url_for('users_page') }}" class="btn" style="width: 100%; justify-content: center; text-decoration: none; padding: 10px; font-size: 13.5px;">
+                    👥 מעבר לניהול משתמשים והרשאות (RBAC) ➔
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Academic & System Audit Metadata -->
+        <div class="panel" style="background: rgba(14, 28, 48, 0.72); border: 1px solid rgba(56, 120, 180, 0.32); border-radius: 12px; padding: 24px;">
+            <div style="margin-bottom: 16px; border-bottom: 1px solid rgba(56, 120, 180, 0.25); padding-bottom: 12px;">
+                <span class="section-tag" style="color: #38bdf8; font-size: 11px; font-weight: 700; text-transform: uppercase;">SESSION AUDIT</span>
+                <h3 style="font-size: 18px; font-weight: 700; color: #fff; margin: 4px 0 0;">Security Verification</h3>
+            </div>
+
+            <div style="font-family: var(--font-mono); font-size: 12.5px; display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
+                    <span style="color: #94a3b8;">Session State:</span>
+                    <span style="color: #00ff9d; font-weight: bold;">AUTHENTICATED</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
+                    <span style="color: #94a3b8;">Last Login:</span>
+                    <span style="color: #f0f6fc;">{{ user.last_login }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
+                    <span style="color: #94a3b8;">Registered Since:</span>
+                    <span style="color: #f0f6fc;">{{ user.created_at }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
+                    <span style="color: #94a3b8;">CSRF / Session Token:</span>
+                    <span style="color: #38bdf8;">HMAC-SHA256 (ARMED)</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #94a3b8;">Target Operating System:</span>
+                    <span style="color: #f0f6fc;">Kali Linux (Rolling 2026.x)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function updateProfile(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-profile');
+    const oldText = btn.innerHTML;
+    btn.innerHTML = '⏳ Saving...';
+    btn.disabled = true;
+
+    const fullName = document.getElementById('prof-fullname').value;
+    const email = document.getElementById('prof-email').value;
+
+    try {
+        const resp = await fetch('{{ url_for("api_profile_update") }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({full_name: fullName, email: email})
+        });
+        const data = await resp.json();
+        if (data.success) {
+            showToast('פרופיל המשתמש עודכן בהצלחה!', 'success');
+            document.getElementById('disp-fullname').innerText = data.user.full_name;
+            const hudName = document.getElementById('hud-user-display-name');
+            if (hudName) hudName.innerText = data.user.full_name;
+        } else {
+            showToast('שגיאה בעדכון הפרופיל: ' + data.message, 'error');
+        }
+    } catch (err) {
+        showToast('תקלת רשת בעת שמירת הפרופיל', 'error');
+    } finally {
+        btn.innerHTML = oldText;
+        btn.disabled = false;
+    }
+}
+</script>
+{% endblock %}

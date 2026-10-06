@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CFMBA CyberLab Operations Center{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cyberlab.css') }}?v=2.5">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand-section">
+                <div class="brand-logo-icon">⚡</div>
+                <div class="brand-info">
+                    <h1>CFMBA <span>LAB</span></h1>
+                    <div class="brand-sub">Ops Center v2.4</div>
+                </div>
+            </div>
+
+            <ul class="nav-list nav-menu">
+                {% if can_access('dashboard') or can_access('scenarios') or can_access('provisioning') or can_access('disk') %}
+                <li class="nav-category">Supervisor Modules</li>
+                {% if can_access('dashboard') %}
+                <li class="nav-item {% if request.path == '/' %}active{% endif %}">
+                    <a href="{{ url_for('index') }}" id="nav-dashboard">
+                        <span class="nav-icon">📊</span>
+                        <span>VM Dashboard</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if can_access('scenarios') %}
+                <li class="nav-item {% if request.path in ['/scenarios', '/environments'] %}active{% endif %}">
+                    <a href="{{ url_for('scenarios_page') }}" id="nav-scenarios">
+                        <span class="nav-icon">🔄</span>
+                        <span>Duplicate & Scenarios</span>
+                        <span class="nav-badge" style="background: rgba(14, 165, 233, 0.2); color: #38bdf8; border-color: rgba(14, 165, 233, 0.4);">New</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if can_access('provisioning') %}
+                <li class="nav-item {% if request.path in ['/import', '/provisioning'] %}active{% endif %}">
+                    <a href="{{ url_for('import_page') }}" id="nav-import">
+                        <span class="nav-icon">➕</span>
+                        <span>Create / Register VM</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if can_access('disk') %}
+                <li class="nav-item {% if request.path == '/disk' %}active{% endif %}">
+                    <a href="{{ url_for('disk_page') }}" id="nav-disk">
+                        <span class="nav-icon">💾</span>
+                        <span>Disk Status (df -h)</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% endif %}
+
+                {% if can_access('surveillance') or can_access('network') %}
+                <li class="nav-category">Cyber Range Enhancements</li>
+                {% if can_access('surveillance') %}
+                <li class="nav-item {% if request.path == '/surveillance' %}active{% endif %}">
+                    <a href="{{ url_for('surveillance_page') }}" id="nav-surveillance">
+                        <span class="nav-icon">📸</span>
+                        <span>Surveillance & Screen</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if can_access('network') %}
+                <li class="nav-item {% if request.path == '/network' %}active{% endif %}">
+                    <a href="{{ url_for('network_page') }}" id="nav-network">
+                        <span class="nav-icon">🌐</span>
+                        <span>Network & IP Recon</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% endif %}
+
+                {% if can_access('terminal') or can_access('game') %}
+                <li class="nav-category">Operations & Drill</li>
+                {% if can_access('terminal') %}
+                <li class="nav-item {% if request.path in ['/terminal', '/ops-console'] %}active{% endif %}">
+                    <a href="{{ url_for('console_page') }}" id="nav-console">
+                        <span class="nav-icon">⌨️</span>
+                        <span>Cyber Console</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if can_access('game') %}
+                <li class="nav-item {% if request.path == '/game' %}active{% endif %}">
+                    <a href="{{ url_for('game') }}" id="nav-game">
+                        <span class="nav-icon">🎯</span>
+                        <span>Threat Drill Test</span>
+                        <span class="nav-badge" style="background: rgba(255, 51, 102, 0.15); color: var(--neon-red); border-color: rgba(255, 51, 102, 0.3);">Drill</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% endif %}
+
+                {% if can_access('copilot') %}
+                <li class="nav-category">AI Operations</li>
+                <li class="nav-item">
+                    <a href="javascript:void(0)" onclick="toggleCopilot(true)" id="nav-copilot">
+                        <span class="nav-icon">🤖</span>
+                        <span>CyberCopilot AI</span>
+                        <span class="nav-badge" style="background: rgba(0, 255, 157, 0.15); color: var(--neon-green); border-color: rgba(0, 255, 157, 0.3);">Active</span>
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if current_user.role in ['admin', 'lecturer'] %}
+                <li class="nav-category">Access Control & RBAC</li>
+                <li class="nav-item {% if request.path == '/users' %}active{% endif %}">
+                    <a href="{{ url_for('users_page') }}" id="nav-users">
+                        <span class="nav-icon">👥</span>
+                        <span>User Management</span>
+                        <span class="nav-badge" style="background: rgba(14, 165, 233, 0.2); color: #38bdf8; border-color: rgba(14, 165, 233, 0.4);">RBAC</span>
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if not can_access('dashboard') and not can_access('scenarios') and not can_access('provisioning') and not can_access('disk') and not can_access('surveillance') and not can_access('network') and not can_access('terminal') and not can_access('game') %}
+                <li class="nav-category">Lab Status</li>
+                <li style="padding: 12px 14px; margin: 8px 10px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px; font-size: 11.5px; color: #f87171; line-height: 1.4;">
+                    🔒 <strong>אין מודולים פעילים</strong><br>
+                    פנה למרצה או לאדמין להקצאת הרשאות למעבדה.
+                </li>
+                {% endif %}
+
+                <li class="nav-category">Account & Security</li>
+                <li class="nav-item {% if request.path in ['/profile', '/user'] %}active{% endif %}">
+                    <a href="{{ url_for('profile_page') }}" id="nav-profile">
+                        <span class="nav-icon">👤</span>
+                        <span>User Profile</span>
+                        <span class="nav-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">{{ current_user.role_badge }}</span>
+                    </a>
+                </li>
+                <li class="nav-item {% if request.path == '/erd' %}active{% endif %}">
+                    <a href="{{ url_for('erd_page') }}" id="nav-erd">
+                        <span class="nav-icon">📊</span>
+                        <span>ERD Diagram</span>
+                        <span class="nav-badge" style="background: rgba(0, 255, 157, 0.15); color: #00ff9d; border-color: rgba(0, 255, 157, 0.3);">DOCS</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('logout') }}" id="nav-logout" style="color: #f87171;">
+                        <span class="nav-icon">🚪</span>
+                        <span>Sign Out</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <div class="daemon-toggle-card">
+                    <div class="daemon-info">
+                        <span class="daemon-title">Cyber Range Mode</span>
+                        <span class="daemon-desc">Simulation & Demo</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="demo-mode-toggle" checked onchange="toggleDemoMode(this)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Wrapper -->
+        <div class="main-wrapper">
+            <!-- Top HUD -->
+            <header class="top-hud">
+                <div class="hud-left">
+                    <div class="breadcrumb-trail">
+                        <span>CFMBA</span>
+                        <span>/</span>
+                        <span class="current-view">{% block breadcrumb %}Mission Control{% endblock %}</span>
+                    </div>
+                    <div class="live-pill">
+                        <span class="live-dot"></span>
+                        <span>SYSTEM ARMED</span>
+                    </div>
+                </div>
+
+                <div class="hud-right">
+                    <div class="telemetry-ticker">
+                        <div class="ticker-item">
+                            <span class="ticker-label">CPU:</span>
+                            <span class="ticker-val accent" id="ticker-cpu">--%</span>
+                        </div>
+                        <div class="ticker-item">
+                            <span class="ticker-label">RAM:</span>
+                            <span class="ticker-val accent" id="ticker-ram">--%</span>
+                        </div>
+                        <div class="ticker-item">
+                            <span class="ticker-label">VMS ONLINE:</span>
+                            <span class="ticker-val" id="ticker-running-vms">--</span>
+                        </div>
+                    </div>
+
+                    <div class="utc-clock" title="זמן מקומי: שעון ישראל (Asia/Jerusalem / IST)">
+                        <span>⏱️</span>
+                        <span id="utc-clock-val">--:--:-- (שעון ישראל)</span>
+                    </div>
+
+                    <!-- User Profile & Session Logout in Top HUD -->
+                    <div class="hud-user-section" style="display: flex; align-items: center; gap: 8px; margin-left: 8px; padding-left: 10px; border-left: 1px solid rgba(56, 120, 180, 0.3);">
+                        <a href="{{ url_for('profile_page') }}" class="hud-user-badge" title="User Profile ({{ current_user.full_name }})" style="display: flex; align-items: center; gap: 7px; text-decoration: none; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); padding: 4px 10px; border-radius: 8px; color: #fff; transition: all 0.2s ease;">
+                            <span style="width: 22px; height: 22px; border-radius: 50%; background: #0284c7; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">
+                                {{ current_user.full_name[0] }}
+                            </span>
+                            <div style="display: flex; flex-direction: column; text-align: left; line-height: 1.1;">
+                                <span id="hud-user-display-name" style="font-size: 11.5px; font-weight: 600; color: #f0f6fc;">{{ current_user.full_name }}</span>
+                                <span style="font-size: 9.5px; color: #38bdf8; font-family: var(--font-mono);">{{ current_user.role_badge }}</span>
+                            </div>
+                        </a>
+                        <a href="{{ url_for('logout') }}" class="hud-logout-btn" title="Sign out of CFMBA Operations" style="display: flex; align-items: center; gap: 4px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 5px 9px; border-radius: 8px; font-size: 11px; font-weight: 600; text-decoration: none; transition: all 0.2s ease;">
+                            <span>🚪</span>
+                            <span>Sign out</span>
+                        </a>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <main class="content-area">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Floating Copilot Launcher Button & Drawer -->
+    {% if can_access('copilot') %}
+    <div id="copilot-launcher" onclick="toggleCopilot()" title="פתח סייען מעבדה חכם (CyberCopilot AI)">
+        <div class="copilot-launcher-icon">
+            🤖
+            <span class="copilot-launcher-pulse"></span>
+        </div>
+        <div class="copilot-launcher-text">
+            <span class="copilot-launcher-title">CyberCopilot <span style="font-size: 0.65rem; color: var(--neon-green);">● AI</span></span>
+            <span class="copilot-launcher-sub">Lab Assistant</span>
+        </div>
+    </div>
+
+    <!-- AI Copilot Chat Drawer -->
+    <div id="copilot-drawer">
+        <div class="copilot-header">
+            <div class="copilot-header-brand">
+                <div class="copilot-avatar">🤖</div>
+                <div class="copilot-header-info">
+                    <h4>CFMBA CyberCopilot</h4>
+                    <div class="copilot-status-indicator">
+                        <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--neon-green);"></span>
+                        Active AI Agent • עברית & English
+                    </div>
+                </div>
+            </div>
+            <div class="copilot-header-actions">
+                <button class="copilot-btn-icon" onclick="clearCopilotChat()" title="נקה היסטוריה">🗑️</button>
+                <button class="copilot-btn-icon" onclick="toggleCopilot(false)" title="סגור חלון">✕</button>
+            </div>
+        </div>
+
+        <!-- Quick Action Chips -->
+        <div class="copilot-chips-bar">
+            <button class="copilot-chip" onclick="sendQuickCopilotPrompt('תפעיל את Win7')">⚡ תפעיל Win7</button>
+            <button class="copilot-chip" onclick="sendQuickCopilotPrompt('תכבה את כל המכונות')">🛑 כבה הכל</button>
+            <button class="copilot-chip" onclick="sendQuickCopilotPrompt('מה מצב הדיסק והזיכרון?')">💾 מצב דיסק</button>
+            <button class="copilot-chip" onclick="sendQuickCopilotPrompt('צלם מסך של המכונה הרצה')">📸 צלם מסך</button>
+            <button class="copilot-chip" onclick="sendQuickCopilotPrompt('תשכפל את Win7 עבור סטודנט חדש בשם Lab-User-5')">🐑 שכפל מכונה</button>
+            <button class="copilot-chip" onclick="sendQuickCopilotPrompt('תמונת מצב כללית של המעבדה')">📊 תמונת מצב</button>
+        </div>
+
+        <!-- Message Area -->
+        <div class="copilot-messages" id="copilot-messages">
+            <div class="copilot-msg agent">
+                <div>👋 <strong>שלום! אני הסייען החכם (CyberCopilot) של המעבדה.</strong></div>
+                <div style="margin-top: 6px;">אני יכול לכוון אותך במערכת או <strong>לבצע עבורך פקודות ישירות</strong> בעברית או באנגלית!</div>
+                <div style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);">
+                    דוגמאות לפקודות שתוכל לכתוב או להגיד בקול 🎙️:
+                    <ul style="margin: 4px 0 0 0;">
+                        <li>"תפעיל את קאלי" או "הפעל את Win7"</li>
+                        <li>"תכבה את כל המכונות"</li>
+                        <li>"מה מצב הדיסק?"</li>
+                        <li>"צלם מסך"</li>
+                        <li>"איך יוצרים מכונה חדשה?"</li>
+                    </ul>
+                </div>
+                <div style="margin-top: 6px; font-weight: 600; color: var(--neon-cyan);">במה אוכל לסייע לך עכשיו?</div>
+            </div>
+        </div>
+
+        <!-- Input bar -->
+        <form class="copilot-input-bar" id="copilot-form" onsubmit="handleCopilotSubmit(event)">
+            <input type="text" id="copilot-input" class="copilot-input" placeholder="כתוב פקודה או שאלה (עברית / אנגלית)..." autocomplete="off" />
+            <button type="button" id="copilot-mic-btn" class="copilot-btn-mic" onclick="toggleVoiceDictation()" title="דיבור קולי (Speech to Text)">🎙️</button>
+            <button type="submit" id="copilot-send-btn" class="copilot-btn-send" title="שלח פקודה">➤</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+
+    <script src="{{ url_for('static', filename='js/cyberlab.js') }}?v=2.5"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

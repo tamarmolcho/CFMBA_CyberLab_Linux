@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CFMBA CyberLab - תרשים קשרי ישויות (ERD Diagram Viewer)</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e17;
+      --card-bg: #111927;
+      --border: #1e293b;
+      --primary: #00ff9d;
+      --accent: #38bdf8;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 30px 20px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .header {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 30px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .title-box h1 {
+      font-size: 1.6rem;
+      color: var(--primary);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .title-box p {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      background: #1e293b;
+      color: #fff;
+      border: 1px solid #334155;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+    .btn:hover {
+      background: #334155;
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: translateY(-1px);
+    }
+    .btn-primary {
+      background: rgba(0, 255, 157, 0.15);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .btn-primary:hover {
+      background: var(--primary);
+      color: #000;
+      box-shadow: 0 0 15px rgba(0, 255, 157, 0.4);
+    }
+    .diagram-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 30px;
+      overflow-x: auto;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    
+    /* CRITICAL FIX: Mermaid SVG must strictly be LTR with standard alignment */
+    #mermaid-container, .mermaid, #mermaid-container svg {
+      direction: ltr !important;
+      text-align: left !important;
+      display: inline-block;
+      min-width: 1050px;
+      background: #0d1524;
+      padding: 24px;
+      border-radius: 8px;
+      border: 1px solid #1e293b;
+    }
+
+    .info-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 30px;
+      margin-top: 20px;
+    }
+    .info-card h2 {
+      font-size: 1.3rem;
+      color: var(--accent);
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 0.92rem;
+    }
+    th, td {
+      padding: 12px 14px;
+      text-align: right;
+      border-bottom: 1px solid #1e293b;
+    }
+    th {
+      background: #162032;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    tr:hover {
+      background: rgba(255,255,255,0.02);
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+    }
+    .badge-pk { background: rgba(0, 255, 157, 0.2); color: var(--primary); }
+    .badge-fk { background: rgba(56, 189, 248, 0.2); color: var(--accent); }
+    @media print {
+      body { background: #fff; color: #000; padding: 0; }
+      .header, .actions, .info-card { display: none; }
+      .diagram-card { border: none; box-shadow: none; padding: 0; background: #fff; }
+      #mermaid-container { background: #fff; border: none; min-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title-box">
+        <h1>📊 תרשים קשרי ישויות (Entity Relationship Diagram - ERD)</h1>
+        <p>CFMBA CyberLab Operations Center | סטודנטית: <strong>תמר מלכו</strong> | מנחה: <strong>מר ג'ק אלטל</strong> | הקריה האקדמית אונו</p>
+      </div>
+      <div class="actions">
+        <button id="download-btn" class="btn btn-primary" onclick="downloadAsPNG()">
+          📸 הורד תרשים כתמונה (PNG)
+        </button>
+        <button class="btn" onclick="window.print()">
+          🖨️ הדפסה / ייצוא PDF
+        </button>
+        <button class="btn" onclick="zoomIn()">🔍 הגדל (+)</button>
+        <button class="btn" onclick="zoomOut()">🔍 הקטן (-)</button>
+        <button class="btn" onclick="resetZoom()">🔄 אפס זום</button>
+      </div>
+    </div>
+
+    <div class="diagram-card">
+      <div id="mermaid-container">
+        <pre class="mermaid" id="erd-mermaid">
+erDiagram
+    ROLE ||--o{ USER : "assigns (1:N)"
+    ROLE ||--|{ ROLE_PERMISSION : "contains (1:N)"
+    PERMISSION ||--|{ ROLE_PERMISSION : "granted_to (1:N)"
+    
+    HOST ||--o{ VIRTUAL_SYSTEM : "hosts (1:N)"
+    
+    USER ||--o{ ENVIRONMENT : "creates (1:N)"
+    USER ||--o{ ENVIRONMENT_RUN : "launches (1:N)"
+    USER ||--o{ ACTION_LOG : "executes (1:N)"
+    
+    ENVIRONMENT ||--|{ ENVIRONMENT_SYSTEM : "includes (1:N)"
+    VIRTUAL_SYSTEM ||--o{ ENVIRONMENT_SYSTEM : "assigned_to (1:N)"
+    
+    ENVIRONMENT ||--o{ ENVIRONMENT_RUN : "instantiates (1:N)"
+
+    ROLE {
+        int role_id PK
+        string name
+        string description
+    }
+
+    USER {
+        int user_id PK
+        string username
+        string email
+        string full_name
+        string password_hash
+        int role_id FK
+        string locale
+        boolean active
+        datetime created_at
+    }
+
+    PERMISSION {
+        int permission_id PK
+        string code
+        string description
+    }
+
+    ROLE_PERMISSION {
+        int role_id PK,FK
+        int permission_id PK,FK
+    }
+
+    HOST {
+        int host_id PK
+        string name
+        string address
+        string mode
+        datetime created_at
+    }
+
+    VIRTUAL_SYSTEM {
+        int system_id PK
+        int host_id FK
+        string uuid
+        string name
+        string os_type
+        string state
+        string ip_address
+        int memory_mb
+        int cpus
+        int vdi_size_mb
+    }
+
+    ENVIRONMENT {
+        int environment_id PK
+        int owner_user_id FK
+        string name
+        text description
+        string course_name
+        datetime created_at
+    }
+
+    ENVIRONMENT_SYSTEM {
+        int env_sys_id PK
+        int environment_id FK
+        int system_id FK
+        int boot_order
+        string role_label
+    }
+
+    ENVIRONMENT_RUN {
+        int run_id PK
+        int environment_id FK
+        int started_by_user_id FK
+        datetime started_at
+        datetime stopped_at
+        string network_mode
+        string status
+    }
+
+    ACTION_LOG {
+        int log_id PK
+        int user_id FK
+        string action_type
+        string target
+        text command
+        int exit_code
+        datetime timestamp
+    }
+
+    THREAT_DRILL_RESULT {
+        int drill_id PK
+        string full_name
+        float reaction_time_ms
+        string tier_rating
+        datetime timestamp
+    }
+        </pre>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h2>📋 מילון ישויות ומבנה הטבלאות (Data Dictionary)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>שם הישות (Entity)</th>
+            <th>קשרים (Cardinality)</th>
+            <th>מפתח ראשי (PK)</th>
+            <th>מפתחות זרים (FK)</th>
+            <th>תיאור תפקיד הישות במערכת</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>USER</strong></td>
+            <td>1:N מול Environments, ActionLog</td>
+            <td><span class="badge badge-pk">user_id</span></td>
+            <td><span class="badge badge-fk">role_id</span></td>
+            <td>משתמשי המערכת (Admin, Lecturer, Student). סיסמאות מוצפנות ב-scrypt ושיוך תפקידים.</td>
+          </tr>
+          <tr>
+            <td><strong>ROLE</strong></td>
+            <td>1:N מול User, N:M מול Permission</td>
+            <td><span class="badge badge-pk">role_id</span></td>
+            <td>-</td>
+            <td>קבוצות תפקידים וסמכויות במערכת (Admin, Lecturer, Student, Guest).</td>
+          </tr>
+          <tr>
+            <td><strong>PERMISSION</strong></td>
+            <td>N:M מול Role</td>
+            <td><span class="badge badge-pk">permission_id</span></td>
+            <td>-</td>
+            <td>הרשאות גישה פרטניות למודולים (vms, terminal, import, surveillance, network, game).</td>
+          </tr>
+          <tr>
+            <td><strong>ROLE_PERMISSION</strong></td>
+            <td>טבלת קשר N:M</td>
+            <td><span class="badge badge-pk">role_id, permission_id</span></td>
+            <td><span class="badge badge-fk">role_id, permission_id</span></td>
+            <td>שיוך הרשאות מרובות לתפקידים.</td>
+          </tr>
+          <tr>
+            <td><strong>HOST</strong></td>
+            <td>1:N מול VirtualSystem</td>
+            <td><span class="badge badge-pk">host_id</span></td>
+            <td>-</td>
+            <td>השרת המארח (Kali Linux / Hypervisor), כתובת IP ומצב עבודה (Real / Demo).</td>
+          </tr>
+          <tr>
+            <td><strong>VIRTUAL_SYSTEM</strong></td>
+            <td>1:N מול Host, N:M מול Environment</td>
+            <td><span class="badge badge-pk">system_id</span></td>
+            <td><span class="badge badge-fk">host_id</span></td>
+            <td>21 מכונות המעבדה בצי: UUID, שם, מערכת הפעלה, RAM, מעבדים, כתובת IP וסטטוס.</td>
+          </tr>
+          <tr>
+            <td><strong>ENVIRONMENT</strong></td>
+            <td>1:N מול EnvironmentSystem, Run</td>
+            <td><span class="badge badge-pk">environment_id</span></td>
+            <td><span class="badge badge-fk">owner_user_id</span></td>
+            <td>תרחישי מעבדה לימודיים (Scenarios) המאגדים קבוצות מכונות מאוחדות.</td>
+          </tr>
+          <tr>
+            <td><strong>ENVIRONMENT_SYSTEM</strong></td>
+            <td>טבלת שיוך מכונה לתרחיש</td>
+            <td><span class="badge badge-pk">env_sys_id</span></td>
+            <td><span class="badge badge-fk">environment_id, system_id</span></td>
+            <td>קביעת סדר הדלקה (Boot Order) ותפקיד המכונה בתרחיש (Attacker / Target).</td>
+          </tr>
+          <tr>
+            <td><strong>ENVIRONMENT_RUN</strong></td>
+            <td>1:N מול Environment</td>
+            <td><span class="badge badge-pk">run_id</span></td>
+            <td><span class="badge badge-fk">environment_id, started_by</span></td>
+            <td>הפעלות מרוכזות של תרחישים (Batch Start) ומצב הרשת (NAT Network / Bridged).</td>
+          </tr>
+          <tr>
+            <td><strong>ACTION_LOG</strong></td>
+            <td>1:N מול User</td>
+            <td><span class="badge badge-pk">log_id</span></td>
+            <td><span class="badge badge-fk">user_id</span></td>
+            <td>יומן ביקורת מאובטח (Audit Trail) של כל פעולות המעבדה, זמנים וקודי חזרה.</td>
+          </tr>
+          <tr>
+            <td><strong>THREAT_DRILL_RESULT</strong></td>
+            <td>אימון מהירות תגובה</td>
+            <td><span class="badge badge-pk">drill_id</span></td>
+            <td>-</td>
+            <td>תוצאות אימון זיהוי איומי סייבר במילי-שניות הנשמרות ל-results.csv.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        darkMode: true,
+        background: '#0d1524',
+        primaryColor: '#1e293b',
+        primaryTextColor: '#f1f5f9',
+        primaryBorderColor: '#38bdf8',
+        lineColor: '#00ff9d',
+        secondaryColor: '#111927',
+        tertiaryColor: '#162032',
+        fontSize: '13px',
+        fontFamily: 'Inter, system-ui, sans-serif'
+      }
+    });
+
+    let currentZoom = 1;
+    function zoomIn() {
+      currentZoom += 0.15;
+      applyZoom();
+    }
+    function zoomOut() {
+      if (currentZoom > 0.4) {
+        currentZoom -= 0.15;
+        applyZoom();
+      }
+    }
+    function resetZoom() {
+      currentZoom = 1;
+      applyZoom();
+    }
+    function applyZoom() {
+      const container = document.getElementById('mermaid-container');
+      container.style.transform = `scale(${currentZoom})`;
+      container.style.transformOrigin = 'top center';
+    }
+
+    function downloadAsPNG() {
+      const svg = document.querySelector('#mermaid-container svg');
+      if (!svg) {
+        alert('התרשים עדיין בטעינה, אנא נסה שוב בעוד רגע.');
+        return;
+      }
+
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      const svgSize = svg.getBoundingClientRect();
+      const scale = 2;
+      canvas.width = (svgSize.width || 1200) * scale;
+      canvas.height = (svgSize.height || 800) * scale;
+
+      const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+      const URL = window.URL || window.webkitURL || window;
+      const blobURL = URL.createObjectURL(svgBlob);
+
+      img.onload = function() {
+        ctx.fillStyle = '#0d1524';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        const pngURL = canvas.toDataURL('image/png');
+        const downloadLink = document.createElement('a');
+        downloadLink.download = 'CFMBA_CyberLab_ERD_Diagram_Tamar_Molcho.png';
+        downloadLink.href = pngURL;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        URL.revokeObjectURL(blobURL);
+      };
+      img.src = blobURL;
+    }
+  </script>
+</body>
+</html>
